@@ -28,7 +28,7 @@ Hozz létre egy alap könyvtárat, amibe kicsomagolsz mindent. Három alkönyvt�
 * `szim`: itt van a körváltó Windows-os verziója és a körváltó log (lásd 7. pont)
 * `mysql`: itt van az induló adatbázis dump (lásd 2. pont)
 
-A `mysql` könyvtárban csomagold ki a két dump fájlt.
+A `mysql` könyvtárban csomagold ki a három dump fájlt.
 
 ### Arial
 
@@ -76,12 +76,14 @@ Majd MySQL-ben futtasd le ezeket (`root`-ként), persze úgy, hogy a fenti nevek
 	create database zanda;
 	create database zanda_nemlog;
 	create database zanda_homokozo;
+	create database zanda_csataszim;
 	grant all on zanda.* to 'zandaadmin'@'%' identified by 'password';
 	grant all on zanda_nemlog.* to 'zandaadmin'@'%' identified by 'password';
 	grant all on zanda_homokozo.* to 'zandaadmin'@'%' identified by 'password';
+	grant all on zanda_csataszim.* to 'zandaadmin'@'%' identified by 'password';
 	flush privileges;
 
-A `_nemlog` és a `_homokozo` kötelező szuffixumok, vagyis bármi is az alap adatbázis neve, ahhoz kell hozzáfűzni ezeket.
+A `_nemlog`, a `_homokozo` és a `_csataszim` kötelező szuffixumok, vagyis bármi is az alap adatbázis neve, ahhoz kell hozzáfűzni ezeket.
 
 Megjegyzés: biztonsági okokból lehet `'zandaadmin'@'localhost'` is a user definíciója. Ez esetben a játék ugyanúgy el tudja érni az adatbázist, hiszen localhost-ban van. Kívülről viszont lehetetlen, így nehezebb feltörni a rendszer. Aminek az a hátránya, hogy a fejlesztő csak ssh-n keresztül tud hozzányúlni az adatbázishoz. Egyébként ha igazán parás vagy, akkor állítsd be a `bind-address = 127.0.0.1`-et is a `my.cnf`-ben, és akkor semmilyen adatbázishoz nem lehet kívülről csatlakozni.
 
@@ -107,15 +109,17 @@ Kapcsold ki a query cache-t, ha van:
 
 mert nem hatékony (állandóan invalidálódnak a cache bejegyzések).
 
-Ha bekapcsoltad a binary logolást, akkor tedd be ezt a két sort:
+Ha bekapcsoltad a binary logolást, akkor tedd be ezt a három sort:
 
 	binlog_ignore_db	= zanda_nemlog
 	binlog_ignore_db	= zanda_homokozo
+	binlog_ignore_db	= zanda_csataszim
 
 mert
 
 - a `zanda_nemlog` egy szinte csak logtáblákból álló adatbázis, logot logolni pedig értelmetlen
-- a `zanda_homokozo` tipikus használata, hogy oda betöltesz egy állapotot, és ráfuttatsz x környi szimulációt, ez pedig mind-mind fölöslegesen terhelné a binary log-ot.
+- a `zanda_homokozo` tipikus használata, hogy oda betöltesz egy állapotot, és ráfuttatsz x környi szimulációt, ez pedig mind-mind fölöslegesen terhelné a binary log-ot
+- a `zanda_csataszim` kizárólag a csataszimulátorhoz kell, azt meg fölösleges így "védeni".
 
 Egyéb:
 
@@ -136,10 +140,11 @@ Windows-on:
 
 ### Adatbázis betöltése
 
-A `mysql` könyvtárból add ki ezt a két parancsot (és amikor kéri, add meg a `config.php`-ban megadott `$zanda_db_password` jelszót):
+A `mysql` könyvtárból add ki ezt a három parancsot (és amikor kéri, add meg a `config.php`-ban megadott `$zanda_db_password` jelszót):
 
 	mysql -u zandaadmin -p --default-character-set=utf8 zanda < zanda_install_dump.sql
 	mysql -u zandaadmin -p --default-character-set=utf8 zanda_nemlog < zanda_nemlog_install_dump.sql
+	mysql -u zandaadmin -p --default-character-set=utf8 zanda_csataszim < zanda_csataszim_install_dump.sql
 
 Nem kell beszarni, hogy az "üres" adatbázis is sok idő alatt megy fel (10-15 perc). Van egy nagyon nagy tábla: `hexa_bolygo`, meg néhány középnagy: `bolygo_eroforras`, `flotta_hajo`, `hexak`, `bolygo_gyar_eroforras`. És ne feledd, a mellékelt adatbázis valójában nem üres, ott van benne a szűz Omen-galaxis (s8) egy csomó bolygóval, hexával és NPC-flottával.
 
